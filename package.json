@@ -1,0 +1,17 @@
+{
+  "name": "taiko-screencheck",
+  "version": "1.0.0",
+  "description": "simplify visual regression testing with screenshot capture and compare",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/fs-extra": "^8.0.1",
+    "@types/node": "^13.7.0",
+    "fs-extra": "^8.1.0",
+    "typescript": "^3.8.0-dev.20200208"
+  }
+}
