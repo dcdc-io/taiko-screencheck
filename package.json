@@ -5,27 +5,27 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "mocha -r ts-node/register src/spec/**/*.ts",
+    "test": "jest",
     "test:watch": "mocha -r ts-node/register src/spec/**/*.ts --watch"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@types/fs-extra": "^8.0.1",
+    "@types/jest": "^25.1.2",
     "@types/mock-fs": "^4.10.0",
+    "@types/node": "^13.7.0",
     "@types/pixelmatch": "^5.0.0",
     "@types/pngjs": "^3.4.1",
+    "exit": "^0.1.2",
     "fs-extra": "^8.1.0",
+    "jest": "^25.1.0",
     "mock-fs": "^4.10.4",
     "pixelmatch": "^5.1.0",
     "pngjs": "^3.4.0",
-    "unique-names-generator": "^4.2.0"
-  },
-  "devDependencies": {
-    "@types/fs-extra": "^8.0.1",
-    "@types/mocha": "^7.0.1",
-    "@types/node": "^13.7.0",
-    "mocha": "^7.0.1",
+    "terminal-link": "^2.1.1",
+    "ts-jest": "^25.2.0",
     "ts-node": "^8.6.2",
-    "typescript": "^3.8.0-dev.20200208"
+    "typescript": "^3.7.5"
   }
 }

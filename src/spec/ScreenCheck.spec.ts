@@ -12,28 +12,30 @@ describe('ScreenCheck', () => {
     // @ts-ignore
     ScreenCheck.init(taiko)
 
-    describe('#setup()', async () => {
+    describe('#setup()', () => {
         const expectedBaseDir = path.join(__dirname, "temp_safe_to_delete")
 
         let fs = {}
         // @ts-ignore
         fs[path.join(__dirname, "temp_safe_to_delete")] = {}
-        mockfs(fs)
 
-        it('should set ScreenCheck.baseDir', async () => {
+        it('should set ScreenCheck.baseDir', async () => {            
+            mockfs(fs)
             assert.notEqual(ScreenCheck.baseDir, expectedBaseDir)
             await ScreenCheck.setup({baseDir: expectedBaseDir})
             assert.equal(ScreenCheck.baseDir, expectedBaseDir)
+            mockfs.restore()
         })
 
         it('should set ScreenCheck.runId', async () => {
+            mockfs(fs)
             await ScreenCheck.setup({baseDir: expectedBaseDir})
             // assert.equal(ScreenCheck.runId.split("-").length, 2)
-
+            mockfs.restore()
         })
     })
 
-    describe('#simplifyPath', async () => {
+    describe('#simplifyPath', () => {
         it('should remove all unsafe characters', async () => {
             const badPath = "C:/windows/system32/image.png"
             const expectedPath = "C-windows-system32-image-png"
@@ -42,7 +44,7 @@ describe('ScreenCheck', () => {
         })
     })
 
-    describe('#generateFilename', async () => {
+    describe('#generateFilename', () => {
         it('should generate a path without element searching', async () => {
             const expectedFilename = "dcdc-io-events-latest"
             // @ts-ignore
@@ -66,6 +68,7 @@ describe('ScreenCheck', () => {
             await ScreenCheck.setup({baseDir:"", runId:"0001.auto"})
             mockfs.restore()
         })
+        afterEach(() => mockfs.restore())
         it('should take a screenshot without arguments', async () => {
             let hit = 0
             // @ts-ignore
@@ -147,7 +150,7 @@ describe('ScreenCheck', () => {
         })
     })
 
-    describe('#compareImages', async () => {
+    describe('#compareImages', () => {
         it('should produce a diff image', async () => {
             mockfs.restore()
             const image1 = `${__dirname}/image_1.png`
@@ -157,16 +160,17 @@ describe('ScreenCheck', () => {
         })
     })
 
-    describe("#detectLastRunId", async () => {
-        // @ts-ignore
-        await ScreenCheck.init(taiko)
+    describe("#detectLastRunId", () => {
         it('should return 0 if there are no runs', async () => {
+            // @ts-ignore
+            await ScreenCheck.init(taiko)
             const index = await ScreenCheck.detectLatestRunIdIndex()
             assert.equal(index, 0)
         })
     })
 
-    describe('#getReferenceImagePath', async () => {
+    describe('#getReferenceImagePath', () => {        
+        afterEach(() => mockfs.restore())
 
         describe('without setup', () => {
             it('should return null when there is no previous image', async () => {
@@ -176,16 +180,16 @@ describe('ScreenCheck', () => {
             })
     
             it('should return a path when a previous image exists', async () => {            
+                const realpath = path.join(process.cwd(), 'reference')
+                const expectedImage = path.join(realpath, "fake.png")
                 await ScreenCheck.setup()
                 mockfs.restore()
-                mockfs({
-                    '/mock/reference': {
-                        'fake.png': '0123456789'
-                    }
-                })
+                let fs = {}
+                // @ts-ignore
+                fs[realpath] = { 'fake.png': '0123456789'}
+                mockfs(fs)
                 const previousImage = await ScreenCheck.getReferenceImagePath("fake.png")
                 assert.ok(previousImage)
-                const expectedImage = "/mock/reference/fake.png"
                 assert.equal(path.normalize(previousImage!), path.normalize(expectedImage))
             })
         })
@@ -211,4 +215,5 @@ describe('ScreenCheck', () => {
             })
         })
     })
+    
 })

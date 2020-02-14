@@ -48,10 +48,10 @@ export class ScreenCheck {
         ScreenCheck.baseDir = options ? options.baseDir! : process.cwd()
         ScreenCheck.runId = options ? options.runId! : await ScreenCheck.nextRunId() // ScreenCheck.generateRunId()
         ScreenCheck.isSetup = true
+        //  require("fs").symlinkSync("./0001.auto/", "./reference/", "junction")
     }
 
     static async detectLatestRunIdIndex():Promise<number> {
-        console.log("BASEDIR ======================================================== " + ScreenCheck.baseDir)
         let current = (await fse.readdir(ScreenCheck.baseDir))
             .filter(name => name.match(/^\d+\./))
             .filter(name => fse.lstatSync(name).isDirectory)
@@ -84,6 +84,7 @@ export class ScreenCheck {
         const relativeFilename = `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
         const referenceImage = await ScreenCheck.getReferenceImagePath(relativeFilename)
         options.path = `${ScreenCheck.getRunDir()}/${relativeFilename}`
+        await fse.mkdirp(ScreenCheck.getRunDir() + "/")
         await ScreenCheck.taiko.screenshot(options, ...args)
         if (referenceImage) {
             const diff = await ScreenCheck.compareImages(referenceImage, options.path)
