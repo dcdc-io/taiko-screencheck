@@ -48,6 +48,10 @@ export class ScreenCheck {
         ScreenCheck.baseDir = options ? options.baseDir! : process.cwd()
         ScreenCheck.runId = options ? options.runId! : await ScreenCheck.nextRunId() // ScreenCheck.generateRunId()
         ScreenCheck.isSetup = true
+        /* TODO: introduce an options.referenceRunId parameter and either:
+            (a) symlink it when it is set or 
+            (b) automatically detect the last run and symlink that
+        */
         //  require("fs").symlinkSync("./0001.auto/", "./reference/", "junction")
     }
 

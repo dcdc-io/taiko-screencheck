@@ -62,13 +62,15 @@ describe('ScreenCheck', () => {
     })
 
     describe("#screencheck", () => {
-        beforeEach(async () => {            
+        beforeEach(async () => {
             // @ts-ignore
             await ScreenCheck.init(taiko)
             await ScreenCheck.setup({baseDir:"", runId:"0001.auto"})
-            mockfs.restore()
+            mockfs({})
         })
-        afterEach(() => mockfs.restore())
+        afterEach(() => 
+            mockfs.restore()
+        )
         it('should take a screenshot without arguments', async () => {
             let hit = 0
             // @ts-ignore
@@ -162,6 +164,7 @@ describe('ScreenCheck', () => {
 
     describe("#detectLastRunId", () => {
         it('should return 0 if there are no runs', async () => {
+            mockfs.restore()
             // @ts-ignore
             await ScreenCheck.init(taiko)
             const index = await ScreenCheck.detectLatestRunIdIndex()
