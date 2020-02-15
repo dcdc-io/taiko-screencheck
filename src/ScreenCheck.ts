@@ -9,6 +9,10 @@ import { inherits } from "util"
 
 // const { uniqueNamesGenerator, adjectives, colors, animals } = require('unique-names-generator')
 
+export class PageSize {
+    static default = { width: 1440, height: 900 }
+}
+
 export enum ScreenCheckResultType {
     NO_BASE_IMAGE = "NO_BASE_IMAGE",
     SAME = "SAME",
@@ -24,6 +28,9 @@ export class ScreenCheckResult {
         this.data = data
         this.referenceData = referenceData
     }
+    toString():string {
+        return this.result.toString()
+    }
 }
 
 export class ScreenCheck {
@@ -31,8 +38,9 @@ export class ScreenCheck {
     static isSetup:boolean
     static baseDir:string
     static runId:string
+    static refRunId:string
     static getRunDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.runId || "")
-    static getRefDir = () => path.join(ScreenCheck.baseDir || "", 'reference')
+    static getRefDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.refRunId || "")
     static taiko:Taiko
 
     static async init(taiko:Taiko):Promise<void> {
@@ -40,13 +48,10 @@ export class ScreenCheck {
         ScreenCheck.baseDir = process.cwd()
     }
 
-    static async exec():Promise<void> {
-        console.log(arguments)
-    }
-
-    static async setup(options?:{baseDir?:string, runId?:string}):Promise<void> {
+    static async setup(options?:{baseDir?:string, runId?:string, refRunId?:string}):Promise<void> {
         ScreenCheck.baseDir = options ? options.baseDir! : process.cwd()
         ScreenCheck.runId = options ? options.runId! : await ScreenCheck.nextRunId() // ScreenCheck.generateRunId()
+        ScreenCheck.refRunId = options ? options.refRunId! : await ScreenCheck.latestRunId()
         ScreenCheck.isSetup = true
         /* TODO: introduce an options.referenceRunId parameter and either:
             (a) symlink it when it is set or 

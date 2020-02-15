@@ -65,7 +65,7 @@ describe('ScreenCheck', () => {
         beforeEach(async () => {
             // @ts-ignore
             await ScreenCheck.init(taiko)
-            await ScreenCheck.setup({baseDir:"", runId:"0001.auto"})
+            await ScreenCheck.setup({baseDir:"", runId:"0001.auto", refRunId:"reference"})
             mockfs({})
         })
         afterEach(() => 
@@ -183,7 +183,7 @@ describe('ScreenCheck', () => {
             })
     
             it('should return a path when a previous image exists', async () => {            
-                const realpath = path.join(process.cwd(), 'reference')
+                const realpath = path.join(process.cwd(), '0000.auto')
                 const expectedImage = path.join(realpath, "fake.png")
                 await ScreenCheck.setup()
                 mockfs.restore()
@@ -199,21 +199,21 @@ describe('ScreenCheck', () => {
 
         describe('with setup', () => {
             it('should return null when there is no previous image', async () => {
-                await ScreenCheck.setup({ baseDir:"/mock", runId: "0001" })   
+                await ScreenCheck.setup({ baseDir:"/mock", runId: "0001", refRunId: "0000" })   
                 const previousImage = await ScreenCheck.getReferenceImagePath("fake.png")
                 assert.equal(previousImage, undefined)
             })
     
             it('should return a path when a previous image exists', async () => {            
-                await ScreenCheck.setup({ baseDir:"/mock", runId: "0001" })   
+                await ScreenCheck.setup({ baseDir:"/mock", runId: "0001", refRunId: "0000" })   
                 mockfs({
-                    '/mock/reference': {
+                    '/mock/0000': {
                         'fake.png': '0123456789'
                     }
                 })
                 const previousImage = await ScreenCheck.getReferenceImagePath("fake.png")
                 assert.ok(previousImage)
-                const expectedImage = "/mock/reference/fake.png"
+                const expectedImage = "/mock/0000/fake.png"
                 assert.equal(path.normalize(previousImage!), path.normalize(expectedImage))
             })
         })
