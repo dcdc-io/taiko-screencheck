@@ -42,22 +42,24 @@ export class ScreenCheck {
     static getRunDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.runId || "")
     static getRefDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.refRunId || "")
     static taiko:Taiko
+    private static viewPortPatched = false
 
     static async init(taiko:Taiko):Promise<void> {
         ScreenCheck.taiko = taiko
         ScreenCheck.baseDir = process.cwd()
+        ScreenCheck.installViewPortPatch(taiko)
+    }
 
+    static async installViewPortPatch(taiko:Taiko):Promise<void> {
+        if (ScreenCheck.viewPortPatched)
+            return
         const openBrowser = taiko.openBrowser
         // @ts-ignore
         taiko.openBrowser = async function(options?: any = {}) {
-            const windowArg = '--window-size=1440,900'
-            if (options && options.args && options.args.filter((arg:string) => arg.startsWith("--window-size")).length === 0) {
-                options.args.push(windowArg)
-            } else {
-                options.args = [windowArg]
-            }
-            return openBrowser.bind(this)(options)
+            await openBrowser.bind(this)(options)
+            taiko.setViewPort({width:1440, height:900})
         }
+        ScreenCheck.viewPortPatched = true
     }
 
     static async setup(options?:{baseDir?:string, runId?:string, refRunId?:string}):Promise<void> {
