@@ -57,7 +57,7 @@ export class ScreenCheck {
         // @ts-ignore
         taiko.openBrowser = async function(options?: any = {}) {
             await openBrowser.bind(this)(options)
-            taiko.setViewPort({width:1440, height:900})
+            taiko.setViewPort(PageSize.default)
         }
         ScreenCheck.viewPortPatched = true
     }
