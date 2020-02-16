@@ -1,1 +1,5 @@
-_test_harness/
+**
+!dist/*
+package.json
+README.md
+LICENSE

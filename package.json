@@ -5,10 +5,14 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
-    "test:watch": "mocha -r ts-node/register src/spec/**/*.ts --watch"
+    "test": "jest"
   },
-  "author": "",
+  "homepage": "https://github.com/dcdc-io/taiko-screencheck",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dcdc-io/taiko-screencheck.git"
+  },
+  "author": "Benjamin Babik <ben@dcdc.io> (https://dcdc.io)",
   "license": "MIT",
   "dependencies": {
     "@types/fs-extra": "^8.0.1",
