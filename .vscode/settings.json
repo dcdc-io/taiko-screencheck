@@ -1,5 +1,8 @@
 {
     "mochaExplorer.files": "src/spec/**/*.ts",
     "mochaExplorer.require": "ts-node/register",
-    "typescript.tsdk": "node_modules\\typescript\\lib"
+    "typescript.tsdk": "node_modules\\typescript\\lib",
+    "cSpell.words": [
+        "screencheck"
+    ]
 }

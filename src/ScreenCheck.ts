@@ -7,8 +7,6 @@ import path from "path"
 import { PNG } from "pngjs"
 import { inherits } from "util"
 
-// const { uniqueNamesGenerator, adjectives, colors, animals } = require('unique-names-generator')
-
 export class PageSize {
     static default = { width: 1440, height: 900 }
 }
@@ -35,6 +33,28 @@ export class ScreenCheckResult {
     }
 }
 
+const pendingExports: { name: string; value: any }[] = []
+
+function entryPoint():any {
+    return function(target:Object, key:string, descriptor:TypedPropertyDescriptor<(taiko:Taiko) => Promise<void>>) {
+        const init = descriptor.value
+        descriptor.value = async function(taiko:Taiko):Promise<void> {
+            await init!(taiko)
+            while (pendingExports.length) {
+                let { name, value } = pendingExports.pop()!
+                // @ts-ignore
+                taiko[name] = value
+            }
+        }
+    }
+}
+
+function exportForPlugin(name:string):any {
+    return async function(target:Object, key:string, descriptor:PropertyDescriptor) {
+        pendingExports.push({name, value: descriptor.value})
+    }
+}
+
 export class ScreenCheck {
 
     static isSetup:boolean
@@ -47,12 +67,14 @@ export class ScreenCheck {
     private static viewPortPatched = false
     static _openBrowser:any
 
+    @entryPoint()
     static async init(taiko:Taiko):Promise<void> {
         ScreenCheck._openBrowser = taiko.openBrowser
         ScreenCheck.taiko = taiko
         ScreenCheck.baseDir = process.cwd()
     }
 
+    @exportForPlugin("openBrowser")
     static async openBrowser(options: any = {}, useOriginalCall:Boolean = false):Promise<void> {
         if (useOriginalCall) {
             await ScreenCheck._openBrowser(options)
@@ -63,11 +85,17 @@ export class ScreenCheck {
         }
     }
 
-    static async setup(options?:{baseDir?:string, runId?:string, refRunId?:string}):Promise<void> {
-        ScreenCheck.baseDir = options ? options.baseDir! : process.cwd()
-        ScreenCheck.runId = options ? options.runId! : await ScreenCheck.nextRunId() // ScreenCheck.generateRunId()
-        ScreenCheck.refRunId = options ? options.refRunId! : await ScreenCheck.latestRunId()
+    @exportForPlugin("screencheckSetup")
+    static async setup(options?:{baseDir?:string, runId?:string, refRunId?:string}):Promise<{baseDir:string, runId:string, refRunId?:string}> {
+        ScreenCheck.baseDir = options && options.baseDir || process.cwd()
+        ScreenCheck.runId = options && options.runId ? options.runId : await ScreenCheck.nextRunId()
+        ScreenCheck.refRunId = options && options.refRunId ? options.refRunId : await ScreenCheck.latestRunId()
         ScreenCheck.isSetup = true
+        return {
+            baseDir: ScreenCheck.baseDir,
+            runId: ScreenCheck.runId,
+            refRunId: ScreenCheck.refRunId
+        }
     }
 
     static async detectLatestRunIdIndex():Promise<number> {
@@ -91,10 +119,6 @@ export class ScreenCheck {
         let next = current + 1
         return `${next.toString().padStart(4, "0")}.auto`
     }
-    
-    /* static generateRunId(): string {
-        return uniqueNamesGenerator({dictionaries:[adjectives, animals], separator: "-", length:2})
-    } */
 
     static async screencheck(options?: TaikoScreenshotOptions, ...args: TaikoSearchElement[]):Promise<ScreenCheckResult> {
         if (!ScreenCheck.isSetup) 
@@ -135,12 +159,6 @@ export class ScreenCheck {
         }
         return undefined
     }
-
-    /*
-    static async getPreviousImage(current:string):Promise<string> {
-        return `${ScreenCheck.baseDir}/reference/${await ScreenCheck.latestRunId()}.png`
-    }
-    */
 
     static async compareImages(left:string, right:string):Promise<{missmatching:number, diffImage:PNG}> {
         const leftImage = PNG.sync.read(fse.readFileSync(left))
