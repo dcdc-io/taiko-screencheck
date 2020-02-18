@@ -8,6 +8,11 @@ taiko-screencheck is a taiko plugin that assists visual regression testing by tr
 
 By default `taiko-screencheck` will automatically create a directory for screenshots whenever taiko is loaded. It is recommended that test developers use the `screenshot.setup` method to override this behaviour with information particular to a given test run.
 
+## FAQs
+
+1. My headless screen captures never match my headed screen captures of the same page.
+   This may be happening because you have a high DPI display. Try setting your desktop as a 1:1 pixel ratio to your display device. Alternatively you may want to avoid headed mode for the creation of reference images.
+
 ## Contributing
 
 Use the `_test_harness` subdirectory to explore your plugin in the taiko environment.

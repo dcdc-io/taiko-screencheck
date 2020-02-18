@@ -23,10 +23,12 @@ export class ScreenCheckResult {
     result: ScreenCheckResultType
     data: Buffer
     referenceData?: Buffer
-    constructor(result = ScreenCheckResultType.SAME, data:Buffer, referenceData?:Buffer) {
+    pixelCount: Number
+    constructor(result = ScreenCheckResultType.SAME, data:Buffer, referenceData?:Buffer, pixelCount?:number) {
         this.result = result
         this.data = data
         this.referenceData = referenceData
+        this.pixelCount = pixelCount || 0
     }
     toString():string {
         return this.result.toString()
@@ -43,23 +45,22 @@ export class ScreenCheck {
     static getRefDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.refRunId || "")
     static taiko:Taiko
     private static viewPortPatched = false
+    static _openBrowser:any
 
     static async init(taiko:Taiko):Promise<void> {
+        ScreenCheck._openBrowser = taiko.openBrowser
         ScreenCheck.taiko = taiko
         ScreenCheck.baseDir = process.cwd()
-        ScreenCheck.installViewPortPatch(taiko)
     }
 
-    static async installViewPortPatch(taiko:Taiko):Promise<void> {
-        if (ScreenCheck.viewPortPatched)
-            return
-        const openBrowser = taiko.openBrowser
-        // @ts-ignore
-        taiko.openBrowser = async function(options?: any = {}) {
-            await openBrowser.bind(this)(options)
-            taiko.setViewPort(PageSize.default)
+    static async openBrowser(options: any = {}, useOriginalCall:Boolean = false):Promise<void> {
+        if (useOriginalCall) {
+            await ScreenCheck._openBrowser(options)
+        } else {
+            options.args = [...(options.args || []), '--disable-gpu']
+            await ScreenCheck._openBrowser(options)
+            await ScreenCheck.taiko.setViewPort(PageSize.default)
         }
-        ScreenCheck.viewPortPatched = true
     }
 
     static async setup(options?:{baseDir?:string, runId?:string, refRunId?:string}):Promise<void> {
@@ -67,19 +68,14 @@ export class ScreenCheck {
         ScreenCheck.runId = options ? options.runId! : await ScreenCheck.nextRunId() // ScreenCheck.generateRunId()
         ScreenCheck.refRunId = options ? options.refRunId! : await ScreenCheck.latestRunId()
         ScreenCheck.isSetup = true
-        /* TODO: introduce an options.referenceRunId parameter and either:
-            (a) symlink it when it is set or 
-            (b) automatically detect the last run and symlink that
-        */
-        //  require("fs").symlinkSync("./0001.auto/", "./reference/", "junction")
     }
 
     static async detectLatestRunIdIndex():Promise<number> {
         let current = (await fse.readdir(ScreenCheck.baseDir))
             .filter(name => name.match(/^\d+\./))
             .filter(name => fse.lstatSync(name).isDirectory)
-            .map(name => parseInt(name.split(".")[0]))
             .sort()
+            .map(name => parseInt(name.split(".")[0]))
             .reverse()[0]
             || 0
         return current
@@ -115,7 +111,8 @@ export class ScreenCheck {
                 return new ScreenCheckResult(
                     ScreenCheckResultType.DIFFERENT,
                     fse.readFileSync(options.path),
-                    fse.readFileSync(referenceImage)
+                    fse.readFileSync(referenceImage),
+                    diff.missmatching
                 )
             } else {
                 return new ScreenCheckResult(
