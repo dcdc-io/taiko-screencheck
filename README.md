@@ -2,11 +2,17 @@
 
 ![Node.js CI](https://github.com/dcdc-io/taiko-screencheck/workflows/Node.js%20CI/badge.svg)
 
+## Installation
+
+`npm install taiko-screencheck --production`
+
+_note: the `--production` flag makes for a smaller install - contributors should fork the git repository instead_
+
 ## Introduction
 
-taiko-screencheck is a taiko plugin that assists visual regression testing by tracking changes to screenshots. It introduces a `screencheck` method that has the same signature as the built-in `screenshot` method, except that it returns the result of comparing this screenshot to a reference screenshot normally stored in a `/reference` subdirectory of the the working directory.
+taiko-screencheck is a taiko plugin that assists visual regression testing by tracking changes to screenshots. It introduces a `screencheck` method that has the same signature as the built-in `screenshot` method, except that it returns the result of comparing this screenshot to a reference screenshot normally stored in a subdirectory of the the working directory.
 
-By default `taiko-screencheck` will automatically create a directory for screenshots whenever taiko is loaded. It is recommended that test developers use the `screenshot.setup` method to override this behaviour with information particular to a given test run.
+By default `taiko-screencheck` will automatically create a directory for screenshots whenever taiko is loaded. It is recommended that test developers use the `screenshotSetup` method to override this behaviour with information particular to a given test run.
 
 ## Taiko Methods
 
@@ -25,4 +31,13 @@ This method optionally configures screencheck to use custom directories for outp
 
 ## Contributing
 
-Use the `_test_harness` subdirectory to explore your plugin in the taiko environment.
+Clone the git repository and use the `_test_harness` subdirectory to test the plugin in the taiko environment. The repository includes a Visual Studio Code configuration for debugging in a taiko context.
+
+```bash
+git clone https://github.com/dcdc-io/taiko-screencheck
+cd taiko-screencheck
+npm install
+npm run build
+npm run test
+```
+
