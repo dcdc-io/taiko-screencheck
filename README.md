@@ -16,11 +16,33 @@ By default `taiko-screencheck` will automatically create a directory for screens
 
 ## Taiko Methods
 
-### `screencheck(screenshotOptions = {}): { result:string, data:Buffer, referenceData:Buffer = undefined, pixelCount:number }`
+### screencheck()
+```typescript
+screencheck(screenshotOptions = {}) => { 
+   result:string = "SAME" | "DIFFERENT" | "NO_BASE_IMAGE",
+   data:Buffer, referenceData:Buffer = undefined, pixelCount:number 
+}
+```
 
-This method takes and saves a screenshot, and compares it to the reference screenshot to the equivalent screenshot in the detected or configured reference run (see below).
+This method takes and saves a screenshot, and compares it to the reference screenshot to the equivalent screenshot in the detected or configured reference run (see screencheckSetup).
 
-### `screencheckSetup(options = { runId:string = <000n.auto>, refRunId:string = <000n-1.auto>, baseDir:string = <cwd>}): options`
+The value of `result` indicates whether or not the screenshots differ.
+
+Taiko CLI example:
+
+```
+await openBrowser()
+await goto("dcdc.io")
+homepage = await screencheck()
+assert.equal(homepage.result, "SAME")
+```
+
+### screencheckSetup()
+```typescript
+screencheckSetup(options = { 
+   runId:string = <auto>, refRunId:string = <auto>, baseDir:string = <cwd>
+}) => options
+```
 
 This method optionally configures screencheck to use custom directories for output and comparison.
 
