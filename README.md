@@ -4,11 +4,11 @@
 
 ## Installation
 
-`npm install taiko-screencheck --production`
-
-_note: the `--production` flag makes for a smaller install - contributors should fork the git repository instead_
+`npm install taiko-screencheck`
 
 ## Introduction
+
+![taiko-screencheck](docs/intro.gif)
 
 taiko-screencheck is a taiko plugin that assists visual regression testing by tracking changes to screenshots. It introduces a `screencheck` method that has the same signature as the built-in `screenshot` method, except that it returns the result of comparing this screenshot to a reference screenshot normally stored in a subdirectory of the the working directory.
 
