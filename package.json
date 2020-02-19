@@ -1,6 +1,6 @@
 {
   "name": "taiko-screencheck",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "simplify visual regression testing with screenshot capture and compare",
   "main": "dist/index.js",
   "scripts": {
