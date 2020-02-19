@@ -15,11 +15,9 @@
   "author": "Benjamin Babik <ben@dcdc.io> (https://dcdc.io)",
   "license": "MIT",
   "dependencies": {
-    "exit": "^0.1.2",
     "fs-extra": "^8.1.0",
     "pixelmatch": "^5.1.0",
-    "pngjs": "^3.4.0",
-    "terminal-link": "^2.1.1"
+    "pngjs": "^3.4.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.0.1",
