@@ -51,6 +51,8 @@ This method optionally configures screencheck to use custom directories for outp
 1. My headless screen captures never match my headed screen captures of the same page.
 
    This may be happening because you have a high DPI display. Try setting your desktop as a 1:1 pixel ratio to your display device. Alternatively you may want to avoid headed mode for the creation of reference images.
+
+   On Windows it may help to disable ClearType while running tests in headed modes.
    
 2. How do I use taiko-screencheck?
 

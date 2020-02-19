@@ -79,7 +79,7 @@ export class ScreenCheck {
         if (useOriginalCall) {
             await ScreenCheck._openBrowser(options)
         } else {
-            options.args = [...(options.args || []), '--disable-gpu']
+            options.args = [...(options.args || []), '--disable-gpu', '--high-dpi-support=1', '--device-scale-factor=1', '--force-device-scale-factor=1']
             await ScreenCheck._openBrowser(options)
             await ScreenCheck.taiko.setViewPort(PageSize.default)
         }
