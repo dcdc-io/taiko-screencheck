@@ -70,6 +70,10 @@ This method optionally configures screencheck to use custom directories for outp
 
    Yes. Call `screencheckSetup()` without providing options and taiko-screencheck will return the current configuration.
 
+6. When I call `openBrowser` the viewport size is 1440 x 900. Why is this happening?
+
+   taiko-screencheck overrides the built in `openBrowser()` command by adding a call to `setViewPort()` that matches the headless mode viewport. This feature mitigates the need to rewrite test scripts written in headed mode that later run in headless mode. If you don't want this behaviour, you can add a second boolean parameter to `openBrowser(options, true)` to force use of the original `openBrowser` command which will have a viewport "appropriate" for your desktop display.
+
 ## Contributing
 
 Clone the git repository and use the `_test_harness` subdirectory to test the plugin in the taiko environment. The repository includes a Visual Studio Code configuration for debugging in a taiko context.
