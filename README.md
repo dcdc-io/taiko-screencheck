@@ -10,9 +10,9 @@
 
 ![taiko-screencheck](https://raw.githubusercontent.com/dcdc-io/taiko-screencheck/master/docs/intro.gif)
 
-taiko-screencheck is a taiko plugin that assists visual regression testing by tracking changes to screenshots. It introduces a `screencheck` method that has the same signature as the built-in `screenshot` method, except that it returns the result of comparing this screenshot to a reference screenshot normally stored in a subdirectory of the the working directory.
+taiko-screencheck is a taiko plugin that assists visual regression testing by tracking visual changes to websites and web apps. It introduces a global `screencheck` method that has the same call signature as the built-in `screenshot` method, except that it returns the result of comparing a screenshot to a reference screenshot.
 
-By default `taiko-screencheck` will automatically create a directory for screenshots whenever taiko is loaded. It is recommended that test developers use the `screenshotSetup` method to override this behaviour with information particular to a given test run.
+By default taiko-screencheck will create an automatically numbered directory to store screenshots. It is recommended that test developers use the `screenshotSetup` method to override this behaviour to give complete control of taiko-screencheck output.
 
 ## Taiko Methods
 
@@ -24,9 +24,9 @@ screencheck(screenshotOptions = {}) => {
 }
 ```
 
-This method takes and saves a screenshot, and compares it to the reference screenshot to the equivalent screenshot in the detected or configured reference run (see screencheckSetup).
+This method takes and saves a screenshot and compares it to the reference screenshot in the detected or configured reference directory (see screencheckSetup#refRunId).
 
-The value of `result` indicates whether or not the screenshots differ.
+The value of the returned `result` property indicates whether or not the screenshots differ.
 
 Taiko CLI example:
 
@@ -49,7 +49,26 @@ This method optionally configures screencheck to use custom directories for outp
 ## FAQs
 
 1. My headless screen captures never match my headed screen captures of the same page.
+
    This may be happening because you have a high DPI display. Try setting your desktop as a 1:1 pixel ratio to your display device. Alternatively you may want to avoid headed mode for the creation of reference images.
+   
+2. How do I use taiko-screencheck?
+
+   With an initialised node project, run `npm install taiko-screencheck` and from thereonin taiko will automatically enable taiko-screencheck.
+   
+3. Does taiko-screencheck work on the taiko CLI and in node?
+
+   Yes. You can use the plugin in both node and taiko CLI.
+   
+4. What happens when I don't configure using `screencheckSetup`?
+
+   taiko-screencheck will create a directory per run, named _000n_.auto where _n_ is computed based on the current contents of the base directory. This is to say, the first time it runs the output will go to `$pwd/0001.auto` and the next time `$pwd/0002.auto` and so on.
+   
+   You can use `screencheckSetup(options)` to change this behaviour.
+   
+5. Can I see the current configuration at runtime?
+
+   Yes. Call `screencheckSetup()` without providing options and taiko-screencheck will return the current configuration.
 
 ## Contributing
 
