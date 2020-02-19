@@ -1,5 +1,5 @@
 const assert = require("assert")
-const { screenshot, openBrowser, goto, screencheck, closeBrowser, setViewPort } = require('taiko')
+const { screenshot, openBrowser, goto, screencheck, screencheckSetup, closeBrowser, setViewPort } = require('taiko')
 const { PNG } = require("pngjs")
 const pixelmatch = require("pixelmatch")
 

@@ -36,10 +36,10 @@ export class ScreenCheckResult {
 const pendingExports: { name: string; value: any }[] = []
 
 function entryPoint():any {
-    return function(target:Object, key:string, descriptor:TypedPropertyDescriptor<(taiko:Taiko) => Promise<void>>) {
+    return function(target:Object, key:string, descriptor:TypedPropertyDescriptor<(taiko:Taiko) => void>) {
         const init = descriptor.value
-        descriptor.value = async function(taiko:Taiko):Promise<void> {
-            await init!(taiko)
+        descriptor.value = function(taiko:Taiko):void {
+            init!(taiko)
             while (pendingExports.length) {
                 let { name, value } = pendingExports.pop()!
                 // @ts-ignore
@@ -68,7 +68,7 @@ export class ScreenCheck {
     static _openBrowser:any
 
     @entryPoint()
-    static async init(taiko:Taiko):Promise<void> {
+    static init(taiko:Taiko):void {
         ScreenCheck._openBrowser = taiko.openBrowser
         ScreenCheck.taiko = taiko
         ScreenCheck.baseDir = process.cwd()
