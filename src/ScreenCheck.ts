@@ -124,7 +124,10 @@ export class ScreenCheck {
         if (!ScreenCheck.isSetup) 
             ScreenCheck.setup()
         options = options || {}
-        const relativeFilename = `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
+        if (options.path && path.isAbsolute(options.path)) {
+            throw "options.path cannot be absolute. Please specify a directory relative to .baseDir"
+        }
+        const relativeFilename = options.path || `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
         const referenceImage = await ScreenCheck.getReferenceImagePath(relativeFilename)
         options.path = `${ScreenCheck.getRunDir()}/${relativeFilename}`
         await fse.mkdirp(ScreenCheck.getRunDir() + "/")
