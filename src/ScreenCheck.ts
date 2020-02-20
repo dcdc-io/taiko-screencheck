@@ -5,7 +5,7 @@ import * as fse from "fs-extra"
 import PixelMatch from "pixelmatch"
 import path from "path"
 import { PNG } from "pngjs"
-import { inherits } from "util"
+import { inherits, isFunction, isString } from "util"
 
 export class PageSize {
     static default = { width: 1440, height: 900 }
@@ -15,6 +15,12 @@ export enum ScreenCheckResultType {
     NO_BASE_IMAGE = "NO_BASE_IMAGE",
     SAME = "SAME",
     DIFFERENT = "DIFFERENT"
+}
+
+export interface TaikoScreenshotOptionsEx {
+    path?: string | Function;
+    fullPage?: boolean;
+    encoding?: string;
 }
 
 export class ScreenCheckResult {
@@ -120,18 +126,21 @@ export class ScreenCheck {
         return `${next.toString().padStart(4, "0")}.auto`
     }
 
-    static async screencheck(options?: TaikoScreenshotOptions, ...args: TaikoSearchElement[]):Promise<ScreenCheckResult> {
+    static async screencheck(options?: TaikoScreenshotOptionsEx, ...args: TaikoSearchElement[]):Promise<ScreenCheckResult> {
         if (!ScreenCheck.isSetup) 
             ScreenCheck.setup()
         options = options || {}
-        if (options.path && path.isAbsolute(options.path)) {
+        if (options.path && isFunction(options.path)) {
+            options.path = (options.path as Function)(ScreenCheck.taiko, options, args)
+        }
+        if (options.path && isString(options.path) && path.isAbsolute(options.path)) {
             throw "options.path cannot be absolute. Please specify a directory relative to .baseDir"
         }
-        const relativeFilename = options.path || `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
+        const relativeFilename:string = (options.path && options.path as string) || `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
         const referenceImage = await ScreenCheck.getReferenceImagePath(relativeFilename)
         options.path = `${ScreenCheck.getRunDir()}/${relativeFilename}`
         await fse.mkdirp(ScreenCheck.getRunDir() + "/")
-        await ScreenCheck.taiko.screenshot(options, ...args)
+        await ScreenCheck.taiko.screenshot(options as TaikoScreenshotOptions, ...args)
         if (referenceImage) {
             const diff = await ScreenCheck.compareImages(referenceImage, options.path)
             if (diff.missmatching > 0) {
