@@ -18,9 +18,9 @@ export enum ScreenCheckResultType {
 }
 
 export interface TaikoScreenshotOptionsEx {
-    path?: string | Function;
-    fullPage?: boolean;
-    encoding?: string;
+    path?: string | ((taiko:Taiko, options?:TaikoScreenshotOptions, ...args:TaikoSearchElement[]) => string)
+    fullPage?: boolean
+    encoding?: string
 }
 
 export class ScreenCheckResult {
