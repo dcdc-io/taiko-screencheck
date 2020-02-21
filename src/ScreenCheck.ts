@@ -5,6 +5,7 @@ import * as fse from "fs-extra"
 import PixelMatch from "pixelmatch"
 import path from "path"
 import { PNG } from "pngjs"
+import assert from "assert"
 
 export class PageSize {
     static default = { width: 1440, height: 900 }
@@ -21,23 +22,32 @@ export class ScreenCheckResult {
     data: Buffer
     referenceData?: Buffer
     pixelCount: Number
-    constructor(result = ScreenCheckResultType.SAME, data:Buffer, referenceData?:Buffer, pixelCount?:number) {
+    constructor(result = ScreenCheckResultType.SAME, data: Buffer, referenceData?: Buffer, pixelCount?: number) {
         this.result = result
         this.data = data
         this.referenceData = referenceData
         this.pixelCount = pixelCount || 0
     }
-    toString():string {
+    toString(): string {
         return this.result.toString()
+    }
+    isSame(): boolean {
+        return this.result === ScreenCheckResultType.SAME
+    }
+    isDifferent(): boolean {
+        return this.result === ScreenCheckResultType.DIFFERENT
+    }
+    okay(): void {
+        assert.equal(this.result, ScreenCheckResultType.SAME, "the screenshot does not match the reference screenshot")
     }
 }
 
 const pendingExports: { name: string; value: any }[] = []
 
-function entryPoint():any {
-    return function(target:Object, key:string, descriptor:TypedPropertyDescriptor<(taiko:Taiko) => void>) {
+function entryPoint(): any {
+    return function (target: Object, key: string, descriptor: TypedPropertyDescriptor<(taiko: Taiko) => void>) {
         const init = descriptor.value
-        descriptor.value = function(taiko:Taiko):void {
+        descriptor.value = function (taiko: Taiko): void {
             init!(taiko)
             while (pendingExports.length) {
                 let { name, value } = pendingExports.pop()!
@@ -48,13 +58,13 @@ function entryPoint():any {
     }
 }
 
-function exportForPlugin(name:string):any {
-    return async function(target:Object, key:string, descriptor:PropertyDescriptor) {
-        pendingExports.push({name, value: descriptor.value})
+function exportForPlugin(name: string): any {
+    return async function (target: Object, key: string, descriptor: PropertyDescriptor) {
+        pendingExports.push({ name, value: descriptor.value })
     }
 }
 
-export type FilenameGenerator = (options:TaikoScreenshotOptions, ...args:TaikoSearchElement[]) => Promise<string>
+export type FilenameGenerator = (options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]) => Promise<string>
 
 export type ScreenCheckSetup = {
     baseDir: string
@@ -93,7 +103,7 @@ export class ScreenCheck {
      * @param useOriginalCall use default arguments when launching chromium, otherwise forces 1:1 pixel ratio (default)
      */
     @exportForPlugin("openBrowser")
-    static async openBrowser(options: any = {}, useOriginalCall:Boolean = false):Promise<void> {
+    static async openBrowser(options: any = {}, useOriginalCall: Boolean = false): Promise<void> {
         if (useOriginalCall) {
             await ScreenCheck._openBrowser(options)
         } else {
@@ -108,7 +118,7 @@ export class ScreenCheck {
      * @param options screencheck configuration
      */
     @exportForPlugin("screencheckSetup")
-    static async setup(options?:ScreenCheckSetup):Promise<ScreenCheckSetup> {
+    static async setup(options?: ScreenCheckSetup): Promise<ScreenCheckSetup> {
         ScreenCheck.baseDir = options && options.baseDir || process.cwd()
         ScreenCheck.runId = options && options.runId ? options.runId : await ScreenCheck.nextRunId()
         ScreenCheck.refRunId = options && options.refRunId ? options.refRunId : await ScreenCheck.latestRunId()
@@ -122,7 +132,7 @@ export class ScreenCheck {
         }
     }
 
-    static async detectLatestRunIdIndex():Promise<number> {
+    static async detectLatestRunIdIndex(): Promise<number> {
         let current = (await fse.readdir(ScreenCheck.baseDir))
             .filter(name => name.match(/^\d+\./))
             .filter(name => fse.lstatSync(name).isDirectory)
@@ -133,25 +143,25 @@ export class ScreenCheck {
         return current
     }
 
-    static async latestRunId():Promise<string> {        
+    static async latestRunId(): Promise<string> {
         const current = await ScreenCheck.detectLatestRunIdIndex()
         return `${current.toString().padStart(4, "0")}.auto`
     }
 
-    static async nextRunId():Promise<string> {
+    static async nextRunId(): Promise<string> {
         const current = await ScreenCheck.detectLatestRunIdIndex()
         let next = current + 1
         return `${next.toString().padStart(4, "0")}.auto`
     }
 
-    static async screencheck(options?: TaikoScreenshotOptions, ...args: TaikoSearchElement[]):Promise<ScreenCheckResult> {
-        if (!ScreenCheck.isSetup) 
+    static async screencheck(options?: TaikoScreenshotOptions, ...args: TaikoSearchElement[]): Promise<ScreenCheckResult> {
+        if (!ScreenCheck.isSetup)
             ScreenCheck.setup()
         options = options || {}
         if (options.path && path.isAbsolute(options.path)) {
             throw "options.path cannot be absolute. Please specify a directory relative to .baseDir"
         }
-        const relativeFilename:string = options.path || await ScreenCheck.filenameGenerator(options, ...args)
+        const relativeFilename: string = options.path || await ScreenCheck.filenameGenerator(options, ...args)
         const referenceImage = await ScreenCheck.getReferenceImagePath(relativeFilename)
         options.path = `${ScreenCheck.getRunDir()}/${relativeFilename}`
         await fse.mkdirp(ScreenCheck.getRunDir() + "/")
@@ -179,7 +189,7 @@ export class ScreenCheck {
         }
     }
 
-    static async getReferenceImagePath(current:string):Promise<string | undefined> {
+    static async getReferenceImagePath(current: string): Promise<string | undefined> {
         const absolutePath = path.join(ScreenCheck.getRefDir(), current)
         if (await fse.pathExists(absolutePath)) {
             return absolutePath
@@ -187,11 +197,11 @@ export class ScreenCheck {
         return undefined
     }
 
-    static async compareImages(left:string, right:string):Promise<{missmatching:number, diffImage:PNG}> {
+    static async compareImages(left: string, right: string): Promise<{ missmatching: number, diffImage: PNG }> {
         const leftImage = PNG.sync.read(fse.readFileSync(left))
         const rightImage = PNG.sync.read(fse.readFileSync(right))
         const { width, height } = leftImage
-        const diffImage = new PNG({width, height})
+        const diffImage = new PNG({ width, height })
         const missmatching = PixelMatch(leftImage.data, rightImage.data, diffImage.data, width, height)
         return {
             missmatching,
@@ -214,7 +224,7 @@ export class ScreenCheck {
      * @param fullPage 
      * @param args 
      */
-    static async generateName(taiko:Taiko, fullPage: boolean = false, ... args: TaikoSearchElement[]): Promise<string> {
+    static async generateName(taiko: Taiko, fullPage: boolean = false, ...args: TaikoSearchElement[]): Promise<string> {
         const crypto = require('crypto')
         const url = await taiko.currentURL()
         const urlPart = ScreenCheck.simplifyPath(url.replace(/^\w*\:/gi, ""))
