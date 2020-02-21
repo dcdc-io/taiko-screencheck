@@ -5,7 +5,6 @@ import * as fse from "fs-extra"
 import PixelMatch from "pixelmatch"
 import path from "path"
 import { PNG } from "pngjs"
-import { inherits, isFunction, isString } from "util"
 
 export class PageSize {
     static default = { width: 1440, height: 900 }
@@ -15,12 +14,6 @@ export enum ScreenCheckResultType {
     NO_BASE_IMAGE = "NO_BASE_IMAGE",
     SAME = "SAME",
     DIFFERENT = "DIFFERENT"
-}
-
-export interface TaikoScreenshotOptionsEx {
-    path?: string | ((taiko:Taiko, options?:TaikoScreenshotOptions, ...args:TaikoSearchElement[]) => string)
-    fullPage?: boolean
-    encoding?: string
 }
 
 export class ScreenCheckResult {
@@ -61,25 +54,44 @@ function exportForPlugin(name:string):any {
     }
 }
 
+export type FilenameGenerator = (options:TaikoScreenshotOptions, ...args:TaikoSearchElement[]) => Promise<string>
+
+export type ScreenCheckSetup = {
+    baseDir: string
+    runId?: string
+    refRunId?: string
+    filenameGenerator?: FilenameGenerator
+}
+
 export class ScreenCheck {
 
-    static isSetup:boolean
-    static baseDir:string
-    static runId:string
-    static refRunId:string
+    static isSetup: boolean
+    static baseDir: string
+    static runId: string
+    static refRunId: string
     static getRunDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.runId || "")
     static getRefDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.refRunId || "")
-    static taiko:Taiko
-    private static viewPortPatched = false
-    static _openBrowser:any
+    static taiko: Taiko
+    static _openBrowser: any
+    static filenameGenerator: FilenameGenerator
 
     @entryPoint()
-    static init(taiko:Taiko):void {
+    static init(taiko: Taiko): void {
+        /** hooks */
         ScreenCheck._openBrowser = taiko.openBrowser
+
+        ScreenCheck.filenameGenerator = async (
+            options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]
+        ) => `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
         ScreenCheck.taiko = taiko
-        ScreenCheck.baseDir = process.cwd()
+        ScreenCheck.setup()
     }
 
+    /**
+     * opens the browser, ensuring renderer pixel ratio is 1:1 to display device
+     * @param options taiko openBrowser options
+     * @param useOriginalCall use default arguments when launching chromium, otherwise forces 1:1 pixel ratio (default)
+     */
     @exportForPlugin("openBrowser")
     static async openBrowser(options: any = {}, useOriginalCall:Boolean = false):Promise<void> {
         if (useOriginalCall) {
@@ -91,16 +103,22 @@ export class ScreenCheck {
         }
     }
 
+    /**
+     * configures screencheck
+     * @param options screencheck configuration
+     */
     @exportForPlugin("screencheckSetup")
-    static async setup(options?:{baseDir?:string, runId?:string, refRunId?:string}):Promise<{baseDir:string, runId:string, refRunId?:string}> {
+    static async setup(options?:ScreenCheckSetup):Promise<ScreenCheckSetup> {
         ScreenCheck.baseDir = options && options.baseDir || process.cwd()
         ScreenCheck.runId = options && options.runId ? options.runId : await ScreenCheck.nextRunId()
         ScreenCheck.refRunId = options && options.refRunId ? options.refRunId : await ScreenCheck.latestRunId()
+        ScreenCheck.filenameGenerator = options && options.filenameGenerator ? options.filenameGenerator : ScreenCheck.filenameGenerator
         ScreenCheck.isSetup = true
         return {
             baseDir: ScreenCheck.baseDir,
             runId: ScreenCheck.runId,
-            refRunId: ScreenCheck.refRunId
+            refRunId: ScreenCheck.refRunId,
+            filenameGenerator: ScreenCheck.filenameGenerator
         }
     }
 
@@ -126,17 +144,14 @@ export class ScreenCheck {
         return `${next.toString().padStart(4, "0")}.auto`
     }
 
-    static async screencheck(options?: TaikoScreenshotOptionsEx, ...args: TaikoSearchElement[]):Promise<ScreenCheckResult> {
+    static async screencheck(options?: TaikoScreenshotOptions, ...args: TaikoSearchElement[]):Promise<ScreenCheckResult> {
         if (!ScreenCheck.isSetup) 
             ScreenCheck.setup()
         options = options || {}
-        if (options.path && isFunction(options.path)) {
-            options.path = (options.path as Function)(ScreenCheck.taiko, options, args)
-        }
-        if (options.path && isString(options.path) && path.isAbsolute(options.path)) {
+        if (options.path && path.isAbsolute(options.path)) {
             throw "options.path cannot be absolute. Please specify a directory relative to .baseDir"
         }
-        const relativeFilename:string = (options.path && options.path as string) || `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
+        const relativeFilename:string = options.path || await ScreenCheck.filenameGenerator(options, ...args)
         const referenceImage = await ScreenCheck.getReferenceImagePath(relativeFilename)
         options.path = `${ScreenCheck.getRunDir()}/${relativeFilename}`
         await fse.mkdirp(ScreenCheck.getRunDir() + "/")

@@ -30,7 +30,7 @@ const capture = async (useTaiko) => {
      * second parameter of "true" selects the original unpatched API.
      */
     if (useTaiko) {
-        await openBrowser({headless:false, args:["--disable-gpu"]}, true /* true = use taiko, not ScreenCheck */)
+        await openBrowser({headless:false, args:['--disable-gpu', '--high-dpi-support=1', '--device-scale-factor=1', '--force-device-scale-factor=1']}, true /* true = use taiko, not ScreenCheck */)
         await setViewPort({width:1440, height:900})
     } else {
         await openBrowser({headless:false})
@@ -41,7 +41,7 @@ const capture = async (useTaiko) => {
     await closeBrowser()
 
     if (useTaiko) {
-        await openBrowser({headless:true, args:["--disable-gpu"]}, true /* true = use taiko, not ScreenCheck */)
+        await openBrowser({headless:true, args:['--disable-gpu', '--high-dpi-support=1', '--device-scale-factor=1', '--force-device-scale-factor=1']}, true /* true = use taiko, not ScreenCheck */)
         await setViewPort({width:1440, height:900})
     } else {
         await openBrowser({headless:true})
