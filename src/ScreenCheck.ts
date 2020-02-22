@@ -94,7 +94,6 @@ export class ScreenCheck {
             options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]
         ) => `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
         ScreenCheck.taiko = taiko
-        ScreenCheck.setup()
     }
 
     /**
