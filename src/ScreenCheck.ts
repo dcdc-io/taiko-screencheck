@@ -64,6 +64,21 @@ function exportForPlugin(name: string): any {
     }
 }
 
+function cached(duration:number = NaN): any {
+    return function(target: Object, key:string, descriptor: PropertyDescriptor) {
+        const func = descriptor.value
+        descriptor.value = function():any {
+            if (descriptor.value._has_run && descriptor.value._expires <= Date.now()) {
+                return descriptor.value._return
+            }
+            descriptor.value._return = func(...arguments)
+            descriptor.value._expires = isNaN(duration) ? 0 : Date.now() + Math.ceil(duration)
+            descriptor.value._has_run = true
+            return descriptor.value._return
+        }
+    }
+}
+
 export type FilenameGenerator = (options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]) => Promise<string>
 
 export type ScreenCheckSetup = {
@@ -131,6 +146,7 @@ export class ScreenCheck {
         }
     }
 
+    @cached()
     static async detectLatestRunIdIndex(): Promise<number> {
         let current = (await fse.readdir(ScreenCheck.baseDir))
             .filter(name => name.match(/^\d+\./))
