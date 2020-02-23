@@ -7,6 +7,7 @@ import path from "path"
 import { PNG } from "pngjs"
 import assert from "assert"
 import isDocker from "is-docker"
+import { isBuffer } from "util"
 
 export class PageSize {
     static default = { width: 1440, height: 900 }
@@ -28,6 +29,11 @@ export class ScreenCheckResult {
         this.data = data
         this.referenceData = referenceData
         this.pixelCount = pixelCount || 0
+    }
+    async getDiff(): Promise<Buffer | void> {
+        if (this.referenceData) {
+            return (await ScreenCheck.compareImages(this.referenceData, this.data)).diffImage.data
+        }
     }
     toString(): string {
         return this.result.toString()
@@ -222,9 +228,9 @@ export class ScreenCheck {
         return undefined
     }
 
-    static async compareImages(left: string, right: string): Promise<{ missmatching: number, diffImage: PNG }> {
-        const leftImage = PNG.sync.read(fse.readFileSync(left))
-        const rightImage = PNG.sync.read(fse.readFileSync(right))
+    static async compareImages(left: string | Buffer, right: string | Buffer): Promise<{ missmatching: number, diffImage: PNG }> {
+        const leftImage = PNG.sync.read(isBuffer(left) ? left : fse.readFileSync(left))
+        const rightImage = PNG.sync.read(isBuffer(right) ? right : fse.readFileSync(right))
         const { width, height } = leftImage
         const diffImage = new PNG({ width, height })
         const missmatching = PixelMatch(leftImage.data, rightImage.data, diffImage.data, width, height)
