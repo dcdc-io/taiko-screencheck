@@ -6,6 +6,7 @@ import PixelMatch from "pixelmatch"
 import path from "path"
 import { PNG } from "pngjs"
 import assert from "assert"
+import isDocker from "is-docker"
 
 export class PageSize {
     static default = { width: 1440, height: 900 }
@@ -121,7 +122,16 @@ export class ScreenCheck {
         if (useOriginalCall) {
             await ScreenCheck._openBrowser(options)
         } else {
-            options.args = [...(options.args || []), '--disable-gpu', '--high-dpi-support=1', '--device-scale-factor=1', '--force-device-scale-factor=1']
+            options.args = [...(options.args || []), 
+                '--disable-gpu',
+                '--high-dpi-support=1',
+                '--device-scale-factor=1',
+                '--force-device-scale-factor=1',
+                ...(ScreenCheck.isContainerEnvironment() ? [
+                    '--headless',
+                    '--no-sandbox'
+                ] : [])
+            ]
             await ScreenCheck._openBrowser(options)
             await ScreenCheck.taiko.setViewPort(PageSize.default)
         }
@@ -235,15 +245,21 @@ export class ScreenCheck {
     }
 
     /**
-     * 
-     * @param fullPage 
-     * @param args 
+     * generates a name for a unique name for a screenshot
+     * @param taiko an instance of taiko
+     * @param fullPage if true is capture of whole page
+     * @param args taiko screenshot search elements
      */
     static async generateName(taiko: Taiko, fullPage: boolean = false, ...args: TaikoSearchElement[]): Promise<string> {
         const crypto = require('crypto')
         const url = await taiko.currentURL()
         const urlPart = ScreenCheck.simplifyPath(url.replace(/^\w*\:/gi, ""))
         return `${urlPart}${(args.length ? "-" : "") + args.map(arg => crypto.createHash('md5').update(arg.description).digest("hex").match(/.{6}/)).join("-")}${fullPage ? '-fullpage' : ''}`
+    }
+
+    @exportForPlugin("isContainerEnvironment")
+    static isContainerEnvironment():boolean {
+        return process.env.IS_CONTAINER !== undefined || isDocker()
     }
 }
 
