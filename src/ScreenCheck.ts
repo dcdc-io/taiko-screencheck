@@ -13,9 +13,21 @@ export class PageSize {
     static default = { width: 1440, height: 900 }
 }
 
+/**
+ * Image comparison result type.
+ */
 export enum ScreenCheckResultType {
+    /**
+     * No base image located.
+     */
     NO_BASE_IMAGE = "NO_BASE_IMAGE",
+    /**
+     * The images are alike.
+     */
     SAME = "SAME",
+    /**
+     * The images are different.
+     */
     DIFFERENT = "DIFFERENT"
 }
 
@@ -24,6 +36,7 @@ export class ScreenCheckResult {
     data: Buffer
     referenceData?: Buffer
     pixelCount: Number
+
     constructor(result = ScreenCheckResultType.SAME, data: Buffer, referenceData?: Buffer, pixelCount?: number) {
         this.result = result
         this.data = data
@@ -71,6 +84,14 @@ function exportForPlugin(name: string): any {
     }
 }
 
+/**
+ * <strong>Decorator</strong>
+ * 
+ * Caches the return value of a function.
+ * 
+ * <strong>Warning:</strong> Does not consider parameters in cache key. Not recommended for memoizing functions with arity greater than zero.
+ * @param duration ms duration for return value TTL
+ */
 function cached(duration:number = NaN): any {
     return function(target: Object, key:string, descriptor: PropertyDescriptor) {
         const func = descriptor.value
@@ -82,6 +103,32 @@ function cached(duration:number = NaN): any {
             descriptor.value._expires = isNaN(duration) ? 0 : Date.now() + Math.ceil(duration)
             descriptor.value._has_run = true
             return descriptor.value._return
+        }
+        descriptor.value.invalidate = () => {
+            delete descriptor.value._return
+            delete descriptor.value._expires
+            delete descriptor.value._has_run
+        }
+    }
+}
+
+function cacheInvalidate(method:string) {
+    return function(target:any, propertyKey: string) {
+        if (delete target[propertyKey]) {
+            let value:any
+            Object.defineProperty(target, propertyKey, {
+                get: () => value,
+                set: (newValue:any) => {
+                    if (value !== newValue) {
+                        if (target[method].invalidate) {
+                            target[method].invalidate()
+                        }
+                    }
+                    value = newValue
+                },
+                enumerable: true,
+                configurable: true
+            })
         }
     }
 }
@@ -97,24 +144,29 @@ export type ScreenCheckSetup = {
 
 export class ScreenCheck {
 
-    static isSetup: boolean
-    static baseDir: string
-    static runId: string
-    static refRunId: string
-    static getRunDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.runId || "")
-    static getRefDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.refRunId || "")
+    private static isSetup: boolean
+    @cacheInvalidate("detectLatestRunIdIndex")
+    private static baseDir:string
+    private static runId: string
+    private static refRunId: string
+    protected static getRunDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.runId || "")
+    protected static getRefDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.refRunId || "")
+    /**
+     * The taiko exported API
+     */
     static taiko: Taiko
-    static _openBrowser: any
-    static filenameGenerator: FilenameGenerator
+    private static _openBrowser: any
+    private static filenameGenerator: FilenameGenerator
+    private static defaultFilenameGenerator = async (
+        options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]
+    ) => `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
 
     @entryPoint()
     static init(taiko: Taiko): void {
         /** hooks */
         ScreenCheck._openBrowser = taiko.openBrowser
 
-        ScreenCheck.filenameGenerator = async (
-            options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]
-        ) => `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
+        ScreenCheck.filenameGenerator = ScreenCheck.defaultFilenameGenerator
         ScreenCheck.taiko = taiko
     }
 
@@ -149,9 +201,9 @@ export class ScreenCheck {
      */
     @exportForPlugin("screencheckSetup")
     static async setup(options?: ScreenCheckSetup): Promise<ScreenCheckSetup> {
-        ScreenCheck.baseDir = options && options.baseDir || process.cwd()
-        ScreenCheck.runId = options && options.runId ? options.runId : await ScreenCheck.nextRunId()
-        ScreenCheck.refRunId = options && options.refRunId ? options.refRunId : await ScreenCheck.latestRunId()
+        ScreenCheck.baseDir = options && options.baseDir || ScreenCheck.baseDir || process.cwd()
+        ScreenCheck.runId = options && options.runId ? options.runId : ScreenCheck.runId || await ScreenCheck.nextRunId()
+        ScreenCheck.refRunId = options && options.refRunId ? options.refRunId : ScreenCheck.refRunId || await ScreenCheck.latestRunId()
         ScreenCheck.filenameGenerator = options && options.filenameGenerator ? options.filenameGenerator : ScreenCheck.filenameGenerator
         ScreenCheck.isSetup = true
         return {
@@ -160,6 +212,13 @@ export class ScreenCheck {
             refRunId: ScreenCheck.refRunId,
             filenameGenerator: ScreenCheck.filenameGenerator
         }
+    }
+
+    static async reset(): Promise<void> {
+        ScreenCheck.baseDir = ""
+        ScreenCheck.runId = ""
+        ScreenCheck.refRunId = ""
+        ScreenCheck.filenameGenerator = ScreenCheck.defaultFilenameGenerator
     }
 
     @cached()
@@ -220,6 +279,10 @@ export class ScreenCheck {
         }
     }
 
+    /**
+     * Returns the absolute path of the reference image corresponding to the given current image relative path.
+     * @param current the path of the new image for which a reference image is required
+     */
     static async getReferenceImagePath(current: string): Promise<string | undefined> {
         const absolutePath = path.join(ScreenCheck.getRefDir(), current)
         if (await fse.pathExists(absolutePath)) {
@@ -228,6 +291,11 @@ export class ScreenCheck {
         return undefined
     }
 
+    /**
+     * Compares PNG data and returns a diff PNG (with pngjs) and count of missmatching pixels.
+     * @param left reference PNG data buffer
+     * @param right new PNG data buffer
+     */
     static async compareImages(left: string | Buffer, right: string | Buffer): Promise<{ missmatching: number, diffImage: PNG }> {
         const leftImage = PNG.sync.read(isBuffer(left) ? left : fse.readFileSync(left))
         const rightImage = PNG.sync.read(isBuffer(right) ? right : fse.readFileSync(right))
@@ -241,7 +309,7 @@ export class ScreenCheck {
     }
 
     /**
-     * removes structure from a file path to flatten it
+     * Removes structure from a file path to flatten it to a filename.
      * e.g. /foo/bar/buzz.zip becomes foo-bar-buzz-zip
      * @param path a file path to simplify
      */
@@ -251,7 +319,7 @@ export class ScreenCheck {
     }
 
     /**
-     * generates a name for a unique name for a screenshot
+     * Generates a name for a unique name for a screenshot.
      * @param taiko an instance of taiko
      * @param fullPage if true is capture of whole page
      * @param args taiko screenshot search elements
@@ -263,6 +331,11 @@ export class ScreenCheck {
         return `${urlPart}${(args.length ? "-" : "") + args.map(arg => crypto.createHash('md5').update(arg.description).digest("hex").match(/.{6}/)).join("-")}${fullPage ? '-fullpage' : ''}`
     }
 
+    /**
+     * Detect if execution is inside a container environment.
+     * 
+     * @remarks Exposed as isContainerEnvironment in taiko CLI
+     */
     @exportForPlugin("isContainerEnvironment")
     static isContainerEnvironment():boolean {
         return process.env.IS_CONTAINER !== undefined || isDocker()

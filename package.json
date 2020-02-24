@@ -3,8 +3,10 @@
   "version": "1.0.18",
   "description": "simplify visual regression testing with screenshot capture and compare",
   "main": "dist/index.js",
+  "keywords": ["taiko", "testing", "bdd", "tdd", "vrt", "visual testing", "test automation", "puppeteer", "selenium", "browser"],
   "scripts": {
-    "build": "tsc",
+    "typedoc": "typedoc --out d --excludePrivate",
+    "build": "tsc && npm run test && npm run typedoc",
     "test": "jest"
   },
   "homepage": "https://github.com/dcdc-io/taiko-screencheck",
@@ -31,6 +33,7 @@
     "mock-fs": "^4.10.4",
     "ts-jest": "^25.2.0",
     "ts-node": "^8.6.2",
+    "typedoc": "^0.16.10",
     "typescript": "^3.7.5"
   }
 }

@@ -21,9 +21,9 @@ describe('ScreenCheck', () => {
 
         it('should set ScreenCheck.baseDir', async () => {            
             mockfs(fs)
-            assert.notEqual(ScreenCheck.baseDir, expectedBaseDir)
+            assert.notEqual((await ScreenCheck.setup()).baseDir, expectedBaseDir)
             await ScreenCheck.setup({baseDir: expectedBaseDir})
-            assert.equal(ScreenCheck.baseDir, expectedBaseDir)
+            assert.equal((await ScreenCheck.setup()).baseDir, expectedBaseDir)
             mockfs.restore()
         })
 
@@ -63,6 +63,7 @@ describe('ScreenCheck', () => {
 
     describe("#screencheck", () => {
         beforeEach(async () => {
+            await ScreenCheck.reset()
             // @ts-ignore
             await ScreenCheck.init(taiko)
             await ScreenCheck.setup({baseDir:"", runId:"0001.auto", refRunId:"reference"})
@@ -94,7 +95,7 @@ describe('ScreenCheck', () => {
             await ScreenCheck.screencheck({fullPage:true, encoding:"base64"}, {description:"a"}, {description:"b"})
             assert.equal(
                 JSON.stringify(Array.from(callargs)),
-                JSON.stringify([{fullPage:true, encoding:"base64", path: ScreenCheck.getRunDir() + "/dcdc-io-events-latest-0cc175-92eb5f-fullpage.png"}, {description:"a"}, {description:"b"}])
+                JSON.stringify([{fullPage:true, encoding:"base64", path: path.join((await ScreenCheck.setup()).baseDir || "", (await ScreenCheck.setup()).runId || "") + "/dcdc-io-events-latest-0cc175-92eb5f-fullpage.png"}, {description:"a"}, {description:"b"}])
             )
         })
 
@@ -172,7 +173,8 @@ describe('ScreenCheck', () => {
         })
     })
 
-    describe('#getReferenceImagePath', () => {        
+    describe('#getReferenceImagePath', () => {
+        beforeEach(() => ScreenCheck.reset())
         afterEach(() => mockfs.restore())
 
         describe('without setup', () => {
