@@ -1,6 +1,7 @@
 **
 !dist/*
+!docs/*
 package.json
 README.md
 LICENSE
-docs/intro.gif
+intro.gif
