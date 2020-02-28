@@ -1,6 +1,6 @@
 # taiko screencheck
 
-![Node.js CI](https://github.com/dcdc-io/taiko-screencheck/workflows/Node.js%20CI/badge.svg)
+![Node.js CI](https://github.com/dcdc-io/taiko-screencheck/workflows/Node.js%20CI/badge.svg) [![TypeDocs](https://img.shields.io/badge/TypeDocs-readme-blue)](./docs/index.html)
 
 ## Installation
 
@@ -8,7 +8,7 @@
 
 ## Introduction
 
-![taiko-screencheck](https://raw.githubusercontent.com/dcdc-io/taiko-screencheck/master/docs/intro.gif)
+![taiko-screencheck](https://raw.githubusercontent.com/dcdc-io/taiko-screencheck/master/intro.gif)
 
 taiko-screencheck is a taiko plugin that assists visual regression testing by tracking visual changes to websites and web apps. It introduces a global `screencheck` method that has the same call signature as the built-in `screenshot` method, except that it returns the result of comparing a screenshot to a reference screenshot.
 

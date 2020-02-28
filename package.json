@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "keywords": ["taiko", "testing", "bdd", "tdd", "vrt", "visual testing", "test automation", "puppeteer", "selenium", "browser"],
   "scripts": {
-    "typedoc": "typedoc src/ScreenCheck.ts --out d --excludePrivate",
+    "typedoc": "typedoc src/ScreenCheck.ts --excludePrivate",
     "build": "tsc && npm run test && npm run typedoc",
     "test": "jest"
   },
