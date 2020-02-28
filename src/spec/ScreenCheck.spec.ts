@@ -2,25 +2,23 @@
 import mockfs from "mock-fs"
 import * as fse from "fs-extra"
 import * as assert from "assert"
-import { ScreenCheck, ScreenCheckResult, ScreenCheckResultType } from "../ScreenCheck"
+import { ScreenCheck, ScreenCheckResult, ScreenCheckResultType, ScreenCheckSetup } from "../ScreenCheck"
 import path from "path"
 
 describe('ScreenCheck', () => {
     const taiko = {
         currentURL: () => "https://dcdc.io/events#latest"
     }
-    // @ts-ignore
-    ScreenCheck.init(taiko)
 
     describe('#setup()', () => {
         const expectedBaseDir = path.join(__dirname, "temp_safe_to_delete")
 
-        let fs = {}
-        // @ts-ignore
-        fs[path.join(__dirname, "temp_safe_to_delete")] = {}
-
         it('should set ScreenCheck.baseDir', async () => {            
-            mockfs(fs)
+            mockfs({
+                [expectedBaseDir]: {}
+            })
+            // @ts-ignore
+            await ScreenCheck.init(taiko)
             assert.notEqual((await ScreenCheck.setup()).baseDir, expectedBaseDir)
             await ScreenCheck.setup({baseDir: expectedBaseDir})
             assert.equal((await ScreenCheck.setup()).baseDir, expectedBaseDir)
@@ -28,7 +26,11 @@ describe('ScreenCheck', () => {
         })
 
         it('should set ScreenCheck.runId', async () => {
-            mockfs(fs)
+            mockfs({
+                [expectedBaseDir]: {}
+            })
+            // @ts-ignore
+            await ScreenCheck.init(taiko)
             await ScreenCheck.setup({baseDir: expectedBaseDir})
             // assert.equal(ScreenCheck.runId.split("-").length, 2)
             mockfs.restore()
@@ -63,10 +65,9 @@ describe('ScreenCheck', () => {
 
     describe("#screencheck", () => {
         beforeEach(async () => {
-            await ScreenCheck.reset()
             // @ts-ignore
             await ScreenCheck.init(taiko)
-            await ScreenCheck.setup({baseDir:"", runId:"0001.auto", refRunId:"reference"})
+            await ScreenCheck.setup({runId:"0001.auto", refRunId:"reference"})
             mockfs({})
         })
         afterEach(() => 
@@ -165,7 +166,7 @@ describe('ScreenCheck', () => {
 
     describe("#detectLastRunId", () => {
         it('should return 0 if there are no runs', async () => {
-            mockfs.restore()
+            mockfs({})
             // @ts-ignore
             await ScreenCheck.init(taiko)
             const index = await ScreenCheck.detectLatestRunIdIndex()
@@ -174,24 +175,27 @@ describe('ScreenCheck', () => {
     })
 
     describe('#getReferenceImagePath', () => {
-        beforeEach(() => ScreenCheck.reset())
+        beforeEach(() => {
+            mockfs({})
+            //@ts-ignore
+            ScreenCheck.init(taiko)
+        })
         afterEach(() => mockfs.restore())
 
         describe('without setup', () => {
             it('should return null when there is no previous image', async () => {
-                await ScreenCheck.setup()   
+                // @ts-ignore
+                await ScreenCheck.init(taiko)
                 const previousImage = await ScreenCheck.getReferenceImagePath("fake.png")
                 assert.equal(previousImage, undefined)
             })
     
-            it('should return a path when a previous image exists', async () => {            
+            it('should return a path when a previous image exists', async () => {
+                // @ts-ignore
+                await ScreenCheck.init(taiko)
                 const realpath = path.join(process.cwd(), '0000.auto')
                 const expectedImage = path.join(realpath, "fake.png")
-                await ScreenCheck.setup()
-                mockfs.restore()
-                let fs = {}
-                // @ts-ignore
-                fs[realpath] = { 'fake.png': '0123456789'}
+                let fs = {[realpath]: {'fake.png': '0123456789'}}
                 mockfs(fs)
                 const previousImage = await ScreenCheck.getReferenceImagePath("fake.png")
                 assert.ok(previousImage)
@@ -201,6 +205,7 @@ describe('ScreenCheck', () => {
 
         describe('with setup', () => {
             it('should return null when there is no previous image', async () => {
+                mockfs({})
                 await ScreenCheck.setup({ baseDir:"/mock", runId: "0001", refRunId: "0000" })   
                 const previousImage = await ScreenCheck.getReferenceImagePath("fake.png")
                 assert.equal(previousImage, undefined)

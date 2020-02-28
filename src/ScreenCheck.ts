@@ -135,8 +135,8 @@ function cacheInvalidate(method:string) {
 
 export type FilenameGenerator = (options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]) => Promise<string>
 
-export type ScreenCheckSetup = {
-    baseDir: string
+export class ScreenCheckSetup {
+    baseDir?: string
     runId?: string
     refRunId?: string
     filenameGenerator?: FilenameGenerator
@@ -168,6 +168,10 @@ export class ScreenCheck {
 
         ScreenCheck.filenameGenerator = ScreenCheck.defaultFilenameGenerator
         ScreenCheck.taiko = taiko
+        ScreenCheck.baseDir = ""
+        ScreenCheck.runId = ""
+        ScreenCheck.refRunId = ""
+        ScreenCheck.setup()
     }
 
     /**
@@ -200,10 +204,10 @@ export class ScreenCheck {
      * @param options screencheck configuration
      */
     @exportForPlugin("screencheckSetup")
-    static async setup(options?: ScreenCheckSetup): Promise<ScreenCheckSetup> {
+    static setup(options?: ScreenCheckSetup): ScreenCheckSetup {
         ScreenCheck.baseDir = options && options.baseDir || ScreenCheck.baseDir || process.cwd()
-        ScreenCheck.runId = options && options.runId ? options.runId : ScreenCheck.runId || await ScreenCheck.nextRunId()
-        ScreenCheck.refRunId = options && options.refRunId ? options.refRunId : ScreenCheck.refRunId || await ScreenCheck.latestRunId()
+        ScreenCheck.runId = options && options.runId ? options.runId : ScreenCheck.runId || ScreenCheck.nextRunId()
+        ScreenCheck.refRunId = options && options.refRunId ? options.refRunId : ScreenCheck.refRunId || ScreenCheck.latestRunId()
         ScreenCheck.filenameGenerator = options && options.filenameGenerator ? options.filenameGenerator : ScreenCheck.filenameGenerator
         ScreenCheck.isSetup = true
         return {
@@ -214,16 +218,9 @@ export class ScreenCheck {
         }
     }
 
-    static async reset(): Promise<void> {
-        ScreenCheck.baseDir = ""
-        ScreenCheck.runId = ""
-        ScreenCheck.refRunId = ""
-        ScreenCheck.filenameGenerator = ScreenCheck.defaultFilenameGenerator
-    }
-
     @cached()
-    static async detectLatestRunIdIndex(): Promise<number> {
-        let current = (await fse.readdir(ScreenCheck.baseDir))
+    static detectLatestRunIdIndex(): number {
+        let current = fse.readdirSync(ScreenCheck.baseDir)
             .filter(name => name.match(/^\d+\./))
             .filter(name => fse.lstatSync(name).isDirectory)
             .sort()
@@ -233,13 +230,13 @@ export class ScreenCheck {
         return current
     }
 
-    static async latestRunId(): Promise<string> {
-        const current = await ScreenCheck.detectLatestRunIdIndex()
+    static latestRunId(): string {
+        const current = ScreenCheck.detectLatestRunIdIndex()
         return `${current.toString().padStart(4, "0")}.auto`
     }
 
-    static async nextRunId(): Promise<string> {
-        const current = await ScreenCheck.detectLatestRunIdIndex()
+    static nextRunId(): string {
+        const current = ScreenCheck.detectLatestRunIdIndex()
         let next = current + 1
         return `${next.toString().padStart(4, "0")}.auto`
     }
