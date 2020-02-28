@@ -35,6 +35,9 @@ export class ScreenCheckResult {
     result: ScreenCheckResultType
     data: Buffer
     referenceData?: Buffer
+    /**
+     * The count of pixels that missmatch between data and reference data.
+     */
     pixelCount: Number
 
     constructor(result = ScreenCheckResultType.SAME, data: Buffer, referenceData?: Buffer, pixelCount?: number) {
@@ -43,11 +46,19 @@ export class ScreenCheckResult {
         this.referenceData = referenceData
         this.pixelCount = pixelCount || 0
     }
+    /**
+     * A PNG data buffer containing pixel data corresponding to the difference between data and reference data.
+     * 
+     * Use this method to get a render ready diff image.
+     */
     async getDiff(): Promise<Buffer | void> {
         if (this.referenceData) {
             return (await ScreenCheck.compareImages(this.referenceData, this.data)).diffImage.data
         }
     }
+    /**
+     * The string representation of the result; e.g. SAME, DIFFERENT, NO_BASE_IMAGE
+     */
     toString(): string {
         return this.result.toString()
     }
@@ -57,6 +68,11 @@ export class ScreenCheckResult {
     isDifferent(): boolean {
         return this.result === ScreenCheckResultType.DIFFERENT
     }
+    /**
+     * Asserts result is ScreenCheckResultType.SAME
+     * 
+     * @throws AssertionError
+     */
     okay(): void {
         assert.equal(this.result, ScreenCheckResultType.SAME, "the screenshot does not match the reference screenshot")
     }

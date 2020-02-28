@@ -16,7 +16,7 @@
     "browser"
   ],
   "scripts": {
-    "typedoc": "typedoc src/ScreenCheck.ts --excludePrivate",
+    "typedoc": "typedoc src/ScreenCheck.ts --excludeNotExported --excludePrivate",
     "build": "tsc && npm run test && npm run typedoc",
     "test": "jest"
   },
