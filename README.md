@@ -1,6 +1,6 @@
 # taiko screencheck
 
-![Node.js CI](https://github.com/dcdc-io/taiko-screencheck/workflows/Node.js%20CI/badge.svg) [![TypeDocs](https://img.shields.io/badge/TypeDocs-readme-blue)](./docs/index.html)
+![Node.js CI](https://github.com/dcdc-io/taiko-screencheck/workflows/Node.js%20CI/badge.svg) [![TypeDocs](https://img.shields.io/badge/TypeDocs-readme-blue)](https://dcdc-io.github.io/taiko-screencheck/)
 
 ## Installation
 

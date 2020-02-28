@@ -1,6 +1,6 @@
 {
   "name": "taiko-screencheck",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "description": "simplify visual regression testing with screenshot capture and compare",
   "main": "dist/index.js",
   "keywords": ["taiko", "testing", "bdd", "tdd", "vrt", "visual testing", "test automation", "puppeteer", "selenium", "browser"],
