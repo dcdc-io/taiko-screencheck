@@ -3,7 +3,18 @@
   "version": "1.0.20",
   "description": "simplify visual regression testing with screenshot capture and compare",
   "main": "dist/index.js",
-  "keywords": ["taiko", "testing", "bdd", "tdd", "vrt", "visual testing", "test automation", "puppeteer", "selenium", "browser"],
+  "keywords": [
+    "taiko",
+    "testing",
+    "bdd",
+    "tdd",
+    "vrt",
+    "visual testing",
+    "test automation",
+    "puppeteer",
+    "selenium",
+    "browser"
+  ],
   "scripts": {
     "typedoc": "typedoc src/ScreenCheck.ts --excludePrivate",
     "build": "tsc && npm run test && npm run typedoc",
@@ -20,7 +31,8 @@
     "fs-extra": "^8.1.0",
     "is-docker": "^2.0.0",
     "pixelmatch": "^5.1.0",
-    "pngjs": "^3.4.0"
+    "pngjs": "^3.4.0",
+    "typedoc-plugin-nojekyll": "^1.0.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^8.0.1",
