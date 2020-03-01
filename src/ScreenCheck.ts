@@ -9,7 +9,13 @@ import assert from "assert"
 import isDocker from "is-docker"
 import { isBuffer } from "util"
 
-export class PageSize {
+/**
+ * Standard viewport sizes.
+ */
+export class ViewPortSize {
+    /**
+     * The default browser viewport size.
+     */
     static default = { width: 1440, height: 900 }
 }
 
@@ -31,9 +37,21 @@ export enum ScreenCheckResultType {
     DIFFERENT = "DIFFERENT"
 }
 
+/**
+ * Encapsulates a screen capture comparison. This is the type returned by the CLI method `screencheck`.
+ */
 export class ScreenCheckResult {
-    result: ScreenCheckResultType
+    /**
+     * The comparison result
+     */
+    readonly result: ScreenCheckResultType
+    /**
+     * PNG data
+     */
     data: Buffer
+    /**
+     * PNG reference data
+     */
     referenceData?: Buffer
     /**
      * The count of pixels that missmatch between data and reference data.
@@ -57,19 +75,25 @@ export class ScreenCheckResult {
         }
     }
     /**
-     * The string representation of the result; e.g. SAME, DIFFERENT, NO_BASE_IMAGE
+     * The string representation of the result; e.g. "SAME", "DIFFERENT", "NO_BASE_IMAGE"
      */
     toString(): string {
         return this.result.toString()
     }
+    /**
+     * true if result is [[ScreenCheckResultType.SAME]]
+     */
     isSame(): boolean {
         return this.result === ScreenCheckResultType.SAME
     }
+    /**
+     * true if result is [[ScreenCheckResultType.DIFFERENT]]
+     */
     isDifferent(): boolean {
         return this.result === ScreenCheckResultType.DIFFERENT
     }
     /**
-     * Asserts result is ScreenCheckResultType.SAME
+     * Asserts result is [[ScreenCheckResultType.SAME]]
      * 
      * @throws AssertionError
      */
@@ -149,23 +173,53 @@ function cacheInvalidate(method:string) {
     }
 }
 
+/**
+ * The filename generator function type. Used by [[ScreenCheckSetup]] to specify a custom function for screenshot filename generation. See [[ScreenCheckSetup]] and [[ScreenCheck.setup]].
+ */
 export type FilenameGenerator = (options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]) => Promise<string>
 
+/**
+ * Setup options for screencheck. Allows optional configuration of base directory, run id, reference run id, and filename generator function.
+ */
 export class ScreenCheckSetup {
+    /**
+     * The base directory for screenshot storage. When null or empty will default to the environment current working directory.
+     */
     baseDir?: string
+    /**
+     * An identifier for the current run. Internally this value is used as a relative path, so values that contain path separators are handled as expected.
+     * 
+     * Defaults to 0001.auto when no reference directory exists, otherwise 0002.auto, 0003.auto etc.
+     * 
+     * *note:* this value when unset will autoincrement every time the screenshot module is loaded - usually once per test run.
+     */
     runId?: string
+    /**
+     * An identifier for the reference run. Internally this value is used as a relative path, so values that contain path separators are handled as expected.
+     * 
+     * Defaults to 0000.auto if no directory is found matching the pattern `\d+\.auto`, otherwise will equal the latest detected directory of that format.
+     */
     refRunId?: string
+    /**
+     * A function that produces a filename for a given screenshot request.
+     */
     filenameGenerator?: FilenameGenerator
 }
 
 export class ScreenCheck {
 
     private static isSetup: boolean
-    @cacheInvalidate("detectLatestRunIdIndex")
+    @cacheInvalidate("detectLatestAutoRunIdIndex")
     private static baseDir:string
     private static runId: string
     private static refRunId: string
+    /**
+     * Returns the absolute path of the run output directory.
+     */
     protected static getRunDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.runId || "")
+    /**
+     * Returns the absolute path of the reference run input directory.
+     */
     protected static getRefDir = () => path.join(ScreenCheck.baseDir || "", ScreenCheck.refRunId || "")
     /**
      * The taiko exported API
@@ -177,6 +231,11 @@ export class ScreenCheck {
         options: TaikoScreenshotOptions, ...args: TaikoSearchElement[]
     ) => `${await ScreenCheck.generateName(ScreenCheck.taiko, options.fullPage, ...args)}.png`
 
+    /**
+     * The entrypoint for the taiko plugin. Should be called explicitly only when imported programmatically.
+     * @entrypoint
+     * @param taiko taiko exported API
+     */
     @entryPoint()
     static init(taiko: Taiko): void {
         /** hooks */
@@ -211,12 +270,13 @@ export class ScreenCheck {
                 ] : [])
             ]
             await ScreenCheck._openBrowser(options)
-            await ScreenCheck.taiko.setViewPort(PageSize.default)
+            await ScreenCheck.taiko.setViewPort(ViewPortSize.default)
         }
     }
 
     /**
-     * configures screencheck
+     * Configures screencheck.
+     * @CLI `screencheckSetup()`
      * @param options screencheck configuration
      */
     @exportForPlugin("screencheckSetup")
@@ -234,8 +294,11 @@ export class ScreenCheck {
         }
     }
 
+    /**
+     * Determines the latest run index. Useful when using default setup data.
+     */
     @cached()
-    static detectLatestRunIdIndex(): number {
+    static detectLatestAutoRunIdIndex(): number {
         let current = fse.readdirSync(ScreenCheck.baseDir)
             .filter(name => name.match(/^\d+\./))
             .filter(name => fse.lstatSync(name).isDirectory)
@@ -246,17 +309,30 @@ export class ScreenCheck {
         return current
     }
 
+    /**
+     * Latest run. This value determines the relative directory from which to load reference data when default setup is used.
+     */
     static latestRunId(): string {
-        const current = ScreenCheck.detectLatestRunIdIndex()
+        const current = ScreenCheck.detectLatestAutoRunIdIndex()
         return `${current.toString().padStart(4, "0")}.auto`
     }
 
+    /**
+     * Current run. This value determines the relative directory to store data when default setup is used.
+     */
     static nextRunId(): string {
-        const current = ScreenCheck.detectLatestRunIdIndex()
+        const current = ScreenCheck.detectLatestAutoRunIdIndex()
         let next = current + 1
         return `${next.toString().padStart(4, "0")}.auto`
     }
 
+    /**
+     * The screencheck method that is intended to replace the taiko builtin screenshot method. This method is exported to the taiko CLI
+     * 
+     * @CLI `screencheck()`
+     * @param options taiko screenshot options.
+     * @param args taiko search elements
+     */
     static async screencheck(options?: TaikoScreenshotOptions, ...args: TaikoSearchElement[]): Promise<ScreenCheckResult> {
         if (!ScreenCheck.isSetup)
             ScreenCheck.setup()

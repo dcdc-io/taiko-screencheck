@@ -169,7 +169,7 @@ describe('ScreenCheck', () => {
             mockfs({})
             // @ts-ignore
             await ScreenCheck.init(taiko)
-            const index = await ScreenCheck.detectLatestRunIdIndex()
+            const index = await ScreenCheck.detectLatestAutoRunIdIndex()
             assert.equal(index, 0)
         })
     })
